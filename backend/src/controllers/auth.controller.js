@@ -1,23 +1,28 @@
+import Joi from 'joi';
 import User from '../models/User.model.js';
 import { generateToken } from '../utils/helperFunctions.js';
 
+
+// Joi validation for register user
+const registerSchema = Joi.object({
+    fullName: Joi.string().min(3).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().min(6).required()
+});
+
+// login validation using Joi
+const loginSchema = Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().min(6).required()
+});
+
 export const signup = async (req, res) => {
+    const { error } = registerSchema.validate(req.body);
+    if (error) res.status(400).json({ message: error.details[0].message });
+
   const  { fullName , email , password } = req.body;
 
   try {
-    if (!fullName || !email || !password) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
-
-    if (password.length < 6) {
-        return res.status(400).json({ message: 'Password must be atleast 6  characters long' });
-    }
-
-    // checking emails using regex
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        return res.status(400).json({ message: 'Invalid email format' });
-    }
 
     const user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: 'Email already exists' });
@@ -38,7 +43,8 @@ export const signup = async (req, res) => {
             _id: newUser._id,
             fullName: newUser.fullName,
             email: newUser.email,
-            profilePic: newUser.profilePic
+            profilePic: newUser.profilePic,
+            role: newUser.role,
         });
     } else {
         res.status(400).json({ message: 'Invalid user data' })
@@ -50,9 +56,39 @@ export const signup = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-    res.send('login endpoint');
+
+    const { error } = loginSchema.validate(req.body);
+    if (error) res.status(400).json({ message: error.details[0].message });
+
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email });
+        if (!user || !(await user.comparePassword(password))) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // generate token helper function
+        generateToken(user._id, res);
+
+        res.status(200).json({
+            _id: user._id,
+            fullName: user.fullName,
+            email: user.email,
+            profilePic: user.profilePic,
+            role: user.role
+        });
+    } catch (error) {
+        console.error('Error in login Controller', error.message);
+        res.status(500).json({ message: 'Internal Server Error'});
+    }
 };
 
-export const logout = async (req, res) => {
-    res.send('logout endpoint');
+export const logout = async (_, res) => {
+   try {
+        res.clearCookie('jwtToken', '', { maxAge: 0 });
+        res.status(200).json({ message: 'logout successfully' });
+   } catch (error) {
+        console.error('Error while logging out:', error.message);
+        res.status(500).json({ message: 'Internal Server Error' });
+   }
 };
