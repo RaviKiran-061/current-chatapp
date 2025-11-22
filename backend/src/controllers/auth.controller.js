@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import User from '../models/User.model.js';
+import cloudinary from '../lib/cloudinary.js';
 import { generateToken } from '../utils/helperFunctions.js';
 
 
@@ -91,4 +92,26 @@ export const logout = async (_, res) => {
         console.error('Error while logging out:', error.message);
         res.status(500).json({ message: 'Internal Server Error' });
    }
+};
+
+export const updateProfile = async (req, res) => {
+    try {
+        const { profilePic } = req.body;
+        if (!profilePic) res.status(400).json({ message: 'Profile pic is required' });
+
+        const userId = req.user._id;
+
+        const uploaderResponse = await cloudinary.uploader.upload(profilePic);
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId, 
+            { profilePic: uploaderResponse.secure_url },
+            { new: true }
+        );
+
+        res.status(200).json(updatedUser);
+    } catch (error) {
+        console.error('Error in update profile', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
 };
