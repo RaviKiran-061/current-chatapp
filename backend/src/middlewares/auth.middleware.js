@@ -1,4 +1,4 @@
-import { ENV } from "../lib/env";
+import { ENV } from "../lib/env.js";
 import User from '../models/User.model.js'
 import jwt from 'jsonwebtoken';
 
