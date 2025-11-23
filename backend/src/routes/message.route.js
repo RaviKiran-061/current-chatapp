@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { arcjetProtection } from '../lib/arcjet.js';
+import { arcjetProtection } from '../middlewares/arcjet.middleware.js';
 import { protectRoute } from '../middlewares/auth.middleware.js';
 import { 
     getAllContacts, 
