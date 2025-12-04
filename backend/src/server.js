@@ -7,10 +7,10 @@ import authRoutes from './routes/auth.route.js';
 import messageRoutes from './routes/message.route.js';
 import { connectDB } from './lib/db.js';
 import { ENV } from './lib/env.js'
+import { app, server } from './lib/socket.js';
 
 // dotenv.config();
 
-const app = express();
 const __dirname = path.resolve();
 
 app.use(express.json({ limit: '5mb' })); // req.body
@@ -30,7 +30,7 @@ if (ENV.NODE_ENV === 'production') {
 }
 
 
-app.listen(5000, ()=> {
+server.listen(ENV.PORT, ()=> {
     console.log(`Server is running on PORT: ${ENV.PORT}`) 
     connectDB();
 });
